@@ -1,5 +1,7 @@
 # C# Language Design
 
+[![Join the chat at https://gitter.im/dotnet/csharplang](https://badges.gitter.im/dotnet/csharplang.svg)](https://gitter.im/dotnet/csharplang?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 Welcome to the official repo for C# language design. This is where new C# language features are developed, adopted and specified.
 
 C# is designed by the C# Language Design Team (LDT) in close coordination with the [Roslyn](https://github.com/dotnet/roslyn) project, which implements the language.
@@ -8,7 +10,8 @@ You can find:
 
 - Active C# language feature proposals in the [proposals folder](proposals)
 - Notes from C# language design meetings in the [meetings folder](meetings)
-- Full language specification (draft) in the [spec folder](spec)
+- Full C# 6 language specification (draft) in the [spec folder](spec)
+- Summary of the [language version history here](Language-Version-History.md).
 
 If you discover bugs or deficiencies in the above, please leave an issue to raise them, or even better: a pull request to fix them.
 
@@ -52,4 +55,4 @@ It is our plan to move the C# Language Specification into Markdown, and draft it
 
 ## Implementation
 
-The reference implementation of the C# language can be found in the [Roslyn repository](https://github.com/dotnet/roslyn). Until recently, that was also where language design artifacts were tracked. Please allow a little time as we move over active proposals.
+The reference implementation of the C# language can be found in the [Roslyn repository](https://github.com/dotnet/roslyn). This repository also tracks the [implementation status for language features](https://github.com/dotnet/roslyn/blob/master/docs/Language%20Feature%20Status.md). Until recently, that was also where language design artifacts were tracked. Please allow a little time as we move over active proposals.

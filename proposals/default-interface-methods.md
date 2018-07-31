@@ -21,7 +21,7 @@ These are similar to Java's ["Default Methods"](http://docs.oracle.com/javase/tu
 
 The principal motivations for this feature are
 - Default interface methods enable an API author to add methods to an interface in future versions without breaking source or binary compatibility with existing implementations of that interface. 
-- The feature enables C# to interoperate with APIs targeting [Android (Java)](http://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html) and [iOs (Swift)](https://developer.apple.com/library/content/documentation/Swift/Conceptual/Swift_Programming_Language/Protocols.html#//apple_ref/doc/uid/TP40014097-CH25-ID267), which support similar features.
+- The feature enables C# to interoperate with APIs targeting [Android (Java)](http://docs.oracle.com/javase/tutorial/java/IandI/defaultmethods.html) and [iOS (Swift)](https://developer.apple.com/library/content/documentation/Swift/Conceptual/Swift_Programming_Language/Protocols.html#//apple_ref/doc/uid/TP40014097-CH25-ID267), which support similar features.
 - As it turns out, adding default interface implementations provides the elements of the "traits" language feature (https://en.wikipedia.org/wiki/Trait_(computer_programming)). Traits have proven to be a powerful programming technique (http://scg.unibe.ch/archive/papers/Scha03aTraits.pdf).
 
 
@@ -138,7 +138,7 @@ interface IB : IA
 
 Override declarations in interfaces may not be declared `sealed`.
 
-Public `virtual` function members in an interface may be overriden in a derived interface either implicitly (by using the `override` modifier in a public declaration in the derived interface) or explicitly (by qualifying the name in the override declaration with the interface type that originally declared the method, and omitting an access modifier).
+Public `virtual` function members in an interface may be overridden in a derived interface either implicitly (by using the `override` modifier in a public declaration in the derived interface) or explicitly (by qualifying the name in the override declaration with the interface type that originally declared the method, and omitting an access modifier).
 
 `virtual` function members in an interface that are not `public` may only be overridden explicitly (not implicitly) in derived interfaces, and may only be implemented in a class or struct explicitly (not implicitly). In either case, the overridden or implemented member must be *accessible* where it is overridden.
 
@@ -342,6 +342,24 @@ class Derived: IA // OK, all interface members have a concrete most specific ove
 
 > ***Open Issue:*** The spec should describe the runtime method resolution algorithm in the face of interface default methods. We need to ensure that the semantics are consistent with the language semantics, e.g. which declared methods do and do not override or implement an `internal` method.
 
+### CLR support API
+
+In order for compilers to detect when they are compiling for a runtime that supports this feature, libraries for such runtimes are modified to advertise that fact through the API discussed in https://github.com/dotnet/corefx/issues/17116. We add
+
+``` c#
+namespace System.Runtime.CompilerServices
+{
+    public static class RuntimeFeature
+    {
+        // Presence of the field indicates runtime support
+        public const string DefaultInterfaceImplementation = nameof(DefaultInterfaceImplementation);
+    }
+}
+```
+
+> ***Open issue***: Is that the best name for the *CLR* feature? The CLR feature does much more than just that (e.g. relaxes protection constraints, supports overrides in interfaces, etc). Perhaps it should be called something like "concrete methods in interfaces", or "traits"?
+
+
 ### Further areas to be specified
 
 - [ ] It would be useful to catalog the kinds of source and binary compatibility effects caused by adding default interface methods and overrides to existing interfaces.
@@ -361,13 +379,130 @@ None.
 ## Unresolved questions
 [unresolved]: #unresolved-questions
 
-Open questions are called out throughout the proposal, above.
+- Open questions are called out throughout the proposal, above.
+- See also https://github.com/dotnet/csharplang/issues/406 for a list of open questions.
+- The detailed specification must describe the resolution mechanism used at runtime to select the precise method to be invoked.
+- The interaction of metadata produced by new compilers and consumed by older compilers needs to be worked out in detail. For example, we need to ensure that the metadata representation that we use does not cause the addition of a default implementation in an interface to break an existing class that implements that interface when compiled by an older compiler. This may affect the metadata representation that we can use.
+- The design must consider interoperation with other languages and existing compilers for other languages.
 
-The detailed specification will describe the resolution mechanism used at runtime to select the precise method to be invoked.
+## Resolved Questions
+
+### Abstract Override
+
+The earlier draft spec contained the ability to "reabstract" an inherited method:
+
+``` c#
+interface IA
+{
+    void M();
+}
+interface IB : IA
+{
+    override void M() { }
+}
+interface IC : IB
+{
+    override void M(); // make it abstract again
+}
+```
+
+My notes for 2017-03-20 showed that we decided not to allow this. However, there are at least two use cases for it:
+
+1. The Java APIs, with which some users of this feature hope to interoperate, depend on this facility.
+2. Programming with *traits* benefits from this. Reabstraction is one of the elements of the "traits" language feature (https://en.wikipedia.org/wiki/Trait_(computer_programming)). The following is permitted with classes:
+
+``` c#
+public abstract class Base
+{
+    public abstract void M();
+}
+public abstract class A : Base
+{
+    public override void M() { }
+}
+public abstract class B : A
+{
+    public override abstract void M(); // reabstract Base.M
+}
+```
+
+Unfortunately this code cannot be refactored as a set of interfaces (traits) unless this is permitted. By the *Jared principle of greed*, it should be permitted.
+
+> ***Closed issue:*** Should reabstraction be permitted? [YES] My notes were wrong. The [LDM notes](https://github.com/dotnet/csharplang/blob/master/meetings/2017/LDM-2017-03-21.md) say that reabstraction is permitted in an interface. Not in a class.
+
+
+### Virtual Modifier vs Sealed Modifier
+
+From [Aleksey Tsingauz](https://github.com/AlekseyTs):
+
+> We decided to allow modifiers explicitly stated on interface members, unless there is a reason to disallow some of them. This brings an interesting question around virtual modifier. Should it be required on members with default implementation? 
+> 
+> We could say that:
+> -	if there is no implementation and neither virtual, nor sealed are specified, we assume the member is abstract.  
+> -	if there is an implementation and neither abstract, nor sealed are specified, we assume the member is virtual.
+> -	sealed modifier is required to make a method neither virtual, nor abstract.
+> 
+> Alternatively, we could say that virtual modifier is required for a virtual member. I.e, if there is a member with implementation not explicitly marked with virtual modifier, it is neither virtual, nor abstract. This approach might provide better experience when a method is moved from a class to an interface:
+> -	an abstract method stays abstract.
+> -	a virtual method stays virtual.
+> -	a method without any modifier stays neither virtual, nor abstract.
+> -	sealed modifier cannot be applied to a method that is not an override.
+> 
+> What do you think?
+
+> ***Closed Issue:*** Should a concrete method (with implementation) be implicitly `virtual`? [YES]
+
+***Decisions:*** Made in the LDM 2017-04-05:
+
+1. non-virtual should be explicitly expressed through `sealed` or `private`.
+2. `sealed` is the keyword to make interface instance members with bodies non-virtual
+3. We want to allow all modifiers in interfaces  
+4. Default accessibility for interface members is public, including nested types
+5. private function members in interfaces are implicitly sealed, and `sealed` is not permitted on them.
+6. Private classes (in interfaces) are permitted and can be sealed, and that means sealed in the class sense of sealed.
+7. Absent a good proposal, partial is still not allowed on interfaces or their members.
+
+
+### Binary Compatibility 1
+
+When a library provides a default implementation
+
+``` c#
+interface I1
+{
+    void M() { Impl1 }
+}
+interface I2 : I1
+{
+}
+class C : I2
+{
+}
+```
+
+We understand that the implementation of `I1.M` in `C` is `I1.M`. What if the assembly containing `I2` is changed as follows and recompiled
+
+``` c#
+interface I2 : I1
+{
+    override void M() { Impl2 }
+}
+```
+
+but `C` is not recompiled. What happens when the program is run? An invocation of `(C as I1).M()`
+
+1. Runs `I1.M`
+2. Runs `I2.M`
+3. Throws some kind of runtime error
+
+***Decision:*** Made 2017-04-11: Runs `I2.M`, which is the unambiguously most specific override at runtime.
 
 ## Design meetings
 
-2017-03-08 LDM Meeting Notes (not published yet)
-2017-03-20 LDM Meeting Notes (not published yet)
-[2017-03-23 meeting "CLR Behavior for Default Interface Methods"](https://github.com/dotnet/csharplang/issues/404) (not published yet)
-
+[2017-03-08 LDM Meeting Notes](https://github.com/dotnet/csharplang/blob/master/meetings/2017/LDM-2017-03-08.md)
+[2017-03-21 LDM Meeting Notes](https://github.com/dotnet/csharplang/blob/master/meetings/2017/LDM-2017-03-21.md)
+[2017-03-23 meeting "CLR Behavior for Default Interface Methods"](https://github.com/dotnet/csharplang/blob/master/meetings/2017/CLR-2017-03-23.md)
+[2017-04-05 LDM Meeting Notes](https://github.com/dotnet/csharplang/blob/master/meetings/2017/LDM-2017-04-05.md)
+[2017-04-11 LDM Meeting Notes](https://github.com/dotnet/csharplang/blob/master/meetings/2017/LDM-2017-04-11.md)
+[2017-04-18 LDM Meeting Notes](https://github.com/dotnet/csharplang/blob/master/meetings/2017/LDM-2017-04-18.md)
+[2017-04-19 LDM Meeting Notes](https://github.com/dotnet/csharplang/blob/master/meetings/2017/LDM-2017-04-19.md)

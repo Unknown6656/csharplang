@@ -7,7 +7,7 @@ In a number of common cases, this feature allows the tuple element names to be o
 
 This parallels the behavior of  anonymous types, which allow inferring member names during creation. For instance, `new { x.f1, y?.f2 }` declares members "f1" and "f2".
 
-This is particularily handy when using tuples in LINQ:
+This is particularly handy when using tuples in LINQ:
 
 ```
 // "c" and "result" have element names "f1" and "f2"
@@ -36,6 +36,8 @@ var tuple = ((x.f1, x?.f2) = (1, 2));
 ```
 
 The same would also apply to VB tuples, using the VB-specific rules for inferring name from expression and case-insensitive name comparisons.
+
+When using the C# 7.1 compiler (or later) with language version "7.0", the element names will be inferred (despite the feature not being available), but there will be a use-site error for trying to access them. This will limit additions of new code that would later face the compatibility issue (described below).
 
 ## Drawbacks
 [drawbacks]: #drawbacks

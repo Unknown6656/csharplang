@@ -18,7 +18,7 @@ A C# program consists of one or more compilation units, each contained in a sepa
 
 The *using_directive*s of a compilation unit affect the *global_attributes* and *namespace_member_declaration*s of that compilation unit, but have no effect on other compilation units.
 
-The *global_attributes* ([Attributes](attributes.md#attributes)) of a compilation unit permit the specification of attributes for the target assembly and module. Assemblies and modules act as physical containers for types. An assembly may consist of several physically separate modules.
+The *global_attributes* ([Attributes](attributes.md)) of a compilation unit permit the specification of attributes for the target assembly and module. Assemblies and modules act as physical containers for types. An assembly may consist of several physically separate modules.
 
 The *namespace_member_declaration*s of each compilation unit of a program contribute members to a single declaration space called the global namespace. For example:
 
@@ -408,7 +408,7 @@ namespace N1
 
 class C
 {
-	public static int A
+	public static int A;
 }
 
 namespace N2
@@ -422,6 +422,7 @@ namespace N2
 		{ 
 			A a = new A();   // Ok, A is unambiguous as a type-name
 			A.Equals(2);     // Error, A is ambiguous as a simple-name
+		}
 	}
 }
 ```
@@ -465,7 +466,7 @@ namespace N2
 
 Above, within member declarations in the `N2` namespace, the static members and nested types of `N1.A` are directly available, and thus the method `N` is able to reference both the `B` and `M` members of `N1.A`.
 
-A *using_static_directive` specifically does not import extension methods directly as static methods, but makes them available for extension method invocation ([Extension method invocations](expressions.md#extension-method-invocations)). In the example
+A *using_static_directive* specifically does not import extension methods directly as static methods, but makes them available for extension method invocation ([Extension method invocations](expressions.md#extension-method-invocations)). In the example
 
 ```csharp
 namespace N1 

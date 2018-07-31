@@ -277,13 +277,13 @@ The following table summarizes C#'s operators, listing the operator categories i
 |                                  | `x != y`          | Not equal |
 | Logical AND                      | `x & y`           | Integer bitwise AND, boolean logical AND |
 | Logical XOR                      | `x ^ y`           | Integer bitwise XOR, boolean logical XOR |
-| Logical OR                       | `x | y`           | Integer bitwise OR, boolean logical OR |
+| Logical OR                       | `x \| y`           | Integer bitwise OR, boolean logical OR |
 | Conditional AND                  | `x && y`          | Evaluates `y` only if `x` is `true` |
-| Conditional OR                   | `x || y`          | Evaluates `y` only if `x` is `false` |
+| Conditional OR                   | `x \|\| y`          | Evaluates `y` only if `x` is `false` |
 | Null coalescing                  | `X ?? y`          | Evaluates to `y` if `x` is `null`, to `x` otherwise |
 | Conditional                      | `x ? y : z`       | Evaluates `y` if `x` is `true`, `z` if `x` is `false` |
 | Assignment or anonymous function | `x = y`           | Assignment |
-|                                  | `x op= y`         | Compound assignment; supported operators are `*=` `/=` `%=` `+=` `-=` `<<=` `>>=` `&=` `^=` `|=` |
+|                                  | `x op= y`         | Compound assignment; supported operators are `*=` `/=` `%=` `+=` `-=` `<<=` `>>=` `&=` `^=` `\|=` |
 |                                  | `(T x) => y`      | Anonymous function (lambda expression) |
 
 ## Statements
@@ -376,7 +376,6 @@ static void Main(string[] args) {
         default:
             Console.WriteLine("{0} arguments", n);
             break;
-        }
     }
 }
 ```
@@ -1551,7 +1550,7 @@ An instance of the `Function` delegate type can reference any method that takes 
 
 A delegate can reference either a static method (such as `Square` or `Math.Sin` in the previous example) or an instance method (such as `m.Multiply` in the previous example). A delegate that references an instance method also references a particular object, and when the instance method is invoked through the delegate, that object becomes `this` in the invocation.
 
-Delegates can also be created using anonymous functions, which are "inline methods" that are created on the fly. Anonymous functions can see the local variables of the sourrounding methods. Thus, the multiplier example above can be written more easily without using a `Multiplier` class:
+Delegates can also be created using anonymous functions, which are "inline methods" that are created on the fly. Anonymous functions can see the local variables of the surrounding methods. Thus, the multiplier example above can be written more easily without using a `Multiplier` class:
 
 ```csharp
 double[] doubles =  Apply(a, (double x) => x * 2.0);
